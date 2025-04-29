@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FBEdit Web Editor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="sidebar">
+        <label style="color:#fff;font-size:15px;">
+            Level Name:
+            <input id="levelNameInput" type="text" style="font-size:15px;padding:2px 8px;width:220px;border-radius:3px;border:1px solid #444;background:#181818;color:#fff;" maxlength="64">
+        </label>
+        <div style="margin-bottom:10px;">
+            <div class="block" draggable="true" data-type="player" title="Player">P</div>
+            <div class="block" draggable="true" data-type="key" title="Key">K</div>
+            <div class="block" draggable="true" data-type="door" title="Door">D</div>
+            <div class="block" draggable="true" data-type="goal" title="Goal">G</div>
+            <div class="block" draggable="true" data-type="obstacle" title="Obstacle">O</div>
+        </div>
+        <div class="room-controls">
+            <span style="color:#aaa;font-size:13px;">Room:</span>
+            <select id="roomSelect"></select>
+            <button id="addRoomBtn" title="Add Room">+</button>
+            <button id="removeRoomBtn" title="Remove Room">-</button>
+        </div>
+        <div class="toolbar">
+            <button onclick="downloadBlocks()">Download</button>
+            <input type="file" id="importFile" style="display:none" onchange="importBlocks(event)">
+            <button onclick="document.getElementById('importFile').click()">Import</button>
+            <button id="copyBtn" onclick="copyJSON()">Copy JSON</button>
+            <button id="pasteBtn">Paste JSON</button>
+            <button id="newBtn" style="background:#f00;color:#fff;">New</button>
+            <button id="randomMapBtn" style="background:rgb(0, 182, 9);color:#ffffff;">Random Map</button>
+            <button id="refreshBtn" style="background:#09f;color:#fff;">Refresh</button>
+            <button id="settingsBtn" style="margin-top:8px;">⚙️ Settings</button>
+        </div>
+        <div id="settingsPanel" class="settings-panel">
+            <label><input type="checkbox" id="outlineBlocks" checked> Show outline</label><br>
+            <label><input type="checkbox" id="autoSave" checked> Auto-save/load</label>
+        </div>
+        <div id="blockProps" style="margin-top:18px;display:none;">
+            <div style="color:#aaa;font-size:13px;">Block Properties</div>
+            <div style="margin:6px 0;">
+                <label>X: <input type="number" id="propX" style="width:50px"></label>
+                <label>Y: <input type="number" id="propY" style="width:50px"></label>
+            </div>
+            <div style="margin:6px 0;">
+                <label>W: <input type="number" id="propW" style="width:50px"></label>
+                <label>H: <input type="number" id="propH" style="width:50px"></label>
+            </div>
+            <div id="propTypeWrap" style="margin:6px 0;">
+                <label>Type:
+                    <select id="propType">
+                        <option value="player">Player</option>
+                        <option value="key">Key</option>
+                        <option value="door">Door</option>
+                        <option value="goal">Goal</option>
+                        <option value="obstacle">Obstacle</option>
+                    </select>
+                </label>
+            </div>
+            <button id="deleteBlockBtn" style="margin-top:6px;">Delete</button>
+        </div>
+        <div style="margin-top:20px;color:#aaa;font-size:12px;text-align:center;">
+            Drag blocks<br>to the editor.<br>Resize by corners.<br>Switch rooms above.<br>
+            <span style="color:#0ff;">Ctrl+Z/Y: Undo/Redo<br>Del: Delete<br>Right click: Lock<br>Shift+Click: Multi-select<br>WASD/Arrows: Move</span>
+        </div>
+    </div>
+    <div class="preview-container">
+        <div id="preview"></div>
+    </div>
+    <script src="editor.js"></script>
+</body>
+</html>

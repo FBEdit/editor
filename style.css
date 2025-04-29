@@ -1,0 +1,308 @@
+body {
+    font-family: 'Press Start 2P', monospace, 'Courier New', Courier;
+    margin: 0;
+    display: flex;
+    height: 100vh;
+    background: #111;
+    overflow: hidden;
+    filter: blur(0.5px);
+}
+.sidebar {
+    width: 200px;
+    background: #181818cc;
+    padding: 10px 8px 10px 10px;
+    border-right: 4px solid #222;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    backdrop-filter: blur(6px) brightness(0.9);
+    box-shadow: 0 0 32px #000a;
+}
+.block {
+    width: 40px;
+    height: 40px;
+    margin: 5px 0;
+    cursor: grab;
+    border: 2px solid #444;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-family: inherit;
+    border-radius: 2px;
+    box-shadow: 0 0 0 2px #000 inset;
+    user-select: none;
+    outline: 1px solid #222;
+    color: #fff;
+    background: #222;
+    margin-right: 4px;
+    filter: blur(0.2px) contrast(1.1);
+}
+.block[data-type="player"] { background: #0f0; color: #111; }
+.block[data-type="key"]    { background: #ff0; color: #111; }
+.block[data-type="door"]   { background: #00f; color: #fff; }
+.block[data-type="goal"]   { background: #f00; color: #fff; }
+.block[data-type="obstacle"] { background: #fff; color: #111; }
+.toolbar {
+    margin: 18px 0 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+.toolbar button {
+    background: #222;
+    color: #fff;
+    border: 2px solid #444;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 6px 0;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background 0.2s;
+    filter: blur(0.2px) contrast(1.1);
+}
+.toolbar button:hover {
+    background: #333;
+}
+.room-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+.room-controls select {
+    background: #222;
+    color: #fff;
+    border: 2px solid #444;
+    font-family: inherit;
+    font-size: 13px;
+    border-radius: 2px;
+    padding: 2px 4px;
+}
+.room-controls button {
+    background: #222;
+    color: #fff;
+    border: 2px solid #444;
+    font-family: inherit;
+    font-size: 15px;
+    padding: 2px 7px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.room-controls button:hover {
+    background: #333;
+}
+.preview-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #181818;
+    filter: blur(0.5px) contrast(1.1);
+}
+#preview {
+    background: #000c;
+    border: 4px solid #444;
+    width: 800px;
+    height: 600px;
+    position: relative;
+    image-rendering: pixelated;
+    box-shadow: 0 0 32px #000a, 0 0 0 8px #222a;
+    filter: blur(0.5px) contrast(1.1);
+}
+.editor-block {
+    position: absolute;
+    border: 2px solid #fff;
+    border-radius: 2px;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 13px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    transition: box-shadow 0.1s;
+    z-index: 1;
+    letter-spacing: 1px;
+    text-shadow: 0 1px 0 #000, 1px 0 0 #000;
+    filter: blur(0.2px) contrast(1.1);
+}
+.editor-block.selected {
+    box-shadow: 0 0 0 3px #0ff, 0 0 8px #0ff;
+    z-index: 2;
+}
+.editor-block.locked {
+    opacity: 0.5;
+    border-style: dashed;
+}
+.editor-block[data-type="player"] { background: #0f0; color: #111; }
+.editor-block[data-type="key"]    { background: #ff0; color: #111; }
+.editor-block[data-type="door"]   { background: #00f; color: #fff; }
+.editor-block[data-type="goal"]   { background: #f00; color: #fff; }
+.editor-block[data-type="obstacle"] { background: #fff; color: #111; }
+.resize-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #0ff;
+    border: 2px solid #222;
+    right: -7px;
+    bottom: -7px;
+    cursor: se-resize;
+    z-index: 3;
+    border-radius: 2px;
+}
+input[type="number"] {
+    background: #222;
+    color: #fff;
+    border: 1px solid #444;
+    font-family: inherit;
+    font-size: 13px;
+    border-radius: 2px;
+    padding: 2px 4px;
+    margin-left: 2px;
+}
+select#propType {
+    background: #222;
+    color: #fff;
+    border: 1px solid #444;
+    font-family: inherit;
+    font-size: 13px;
+    border-radius: 2px;
+    padding: 2px 4px;
+}
+#blockProps label {
+    margin-right: 8px;
+}
+#blockProps button {
+    width: 100%;
+    margin-top: 4px;
+    background: #222;
+    color: #fff;
+    border: 2px solid #444;
+    font-family: inherit;
+    font-size: 13px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+#blockProps button:hover {
+    background: #333;
+}
+.select-rect {
+    position: absolute;
+    border: 2px dashed #0ff;
+    background: rgba(0,255,255,0.08);
+    pointer-events: none;
+    z-index: 100;
+}
+.settings-panel {
+    display: none;
+    background: #222e;
+    color: #fff;
+    border: 2px solid #444;
+    border-radius: 4px;
+    padding: 10px 16px;
+    position: absolute;
+    left: 0;
+    top: 320px;
+    font-size: 13px;
+    z-index: 1000;
+    box-shadow: 0 0 16px #000a;
+}
+.preview-overlay {
+    position: absolute;
+    left: 0; top: 0;
+    width: 800px; height: 600px;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    flex-direction: column;
+    filter: blur(0.2px) contrast(1.1);
+}
+#previewCanvas {
+    border: 4px solid #0ff;
+    background: #000;
+    box-shadow: 0 0 32px #0ff8;
+    image-rendering: pixelated;
+}
+.close-preview-btn {
+    position: absolute;
+    top: 12px;
+    right: 18px;
+    background: #222;
+    color: #fff;
+    border: 2px solid #0ff;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+    cursor: pointer;
+    z-index: 2000;
+    transition: background 0.2s;
+}
+.close-preview-btn:hover {
+    background: #0ff;
+    color: #222;
+}
+
+.shortcut-menu {
+    background: #222;
+    color: #fff;
+    border: 2px solid #0ff;
+    border-radius: 6px;
+    padding: 4px 8px;
+    display: flex;
+    gap: 4px;
+    z-index: 9999;
+    box-shadow: 0 2px 12px #000a;
+}
+.shortcut-menu button {
+    background: #111;
+    color: #0ff;
+    border: 1px solid #0ff;
+    border-radius: 3px;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 2px 6px;
+}
+.shortcut-menu button:hover {
+    background: #0ff;
+    color: #111;
+}
+
+/* Compact level name and random button for sidebar */
+.level-title-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 8px 0 4px 0;
+    background: none;
+    border: none;
+    margin-bottom: 4px;
+}
+
+#levelNameInput {
+    font-size: 13px;
+    padding: 2px 6px;
+    width: 100%;
+    max-width: 170px;
+    border-radius: 2px;
+    border: 1px solid #333;
+    background: #222;
+    color: #fff;
+    outline: none;
+    margin-top: 2px;
+}
+
+#levelNameInput:focus {
+    border-color: #0ff;
+    background: #181818;
+}
