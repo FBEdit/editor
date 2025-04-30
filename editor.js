@@ -12,7 +12,9 @@ const propTypeWrap = document.getElementById('propTypeWrap');
 const deleteBlockBtn = document.getElementById('deleteBlockBtn');
 const copyBtn = document.getElementById('copyBtn');
 const importFile = document.getElementById('importFile');
+const importBtn = document.getElementById('importBtn');
 const pasteBtn = document.getElementById('pasteBtn');
+const downloadBtn = document.getElementById('downloadBtn');
 const newBtn = document.getElementById('newBtn');
 const settingsBtn = document.getElementById('settingsBtn');
 const settingsPanel = document.getElementById('settingsPanel');
@@ -30,19 +32,28 @@ levelNameInput.addEventListener('input', () => {
     levelName = levelNameInput.value;
     saveToStorage();
 });
+function getExportData() {
+    return {
+        level_name: levelName,
+        rooms: JSON.parse(JSON.stringify(rooms))
+    };
+}
+function setImportData(data) {
+    if (data.rooms) rooms = data.rooms;
+    if (typeof data.level_name === "string") levelName = data.level_name;
+    else if (typeof data.levelName === "string") levelName = data.levelName;
+    levelNameInput.value = levelName;
+    updateRoomSelect();
+    selectedBlocks = [];
+    renderBlocks();
+    showBlockProps();
+}
 function loadFromStorage() {
     let d = localStorage.getItem('fbedit_level');
     if (!d) return;
     try {
         let data = JSON.parse(d);
-        if (data.rooms) rooms = data.rooms;
-        if (typeof data.currentRoom === "number") currentRoom = data.currentRoom;
-        if (typeof data.levelName === "string") levelName = data.levelName;
-        levelNameInput.value = levelName;
-        updateRoomSelect();
-        selectedBlocks = [];
-        renderBlocks();
-        showBlockProps();
+        setImportData(data);
     } catch {}
 }
 const typeMap = {
@@ -72,23 +83,7 @@ let undoStack = [];
 let redoStack = [];
 function saveToStorage() {
     if (!autoSaveCheckbox.checked) return;
-    localStorage.setItem('fbedit_level', JSON.stringify({
-        rooms, currentRoom, levelName
-    }));
-}
-function loadFromStorageSimple() {
-    let d = localStorage.getItem('fbedit_level');
-    if (!d) return;
-    try {
-        let data = JSON.parse(d);
-        if (data.rooms) rooms = data.rooms;
-        if (typeof data.currentRoom === "number") currentRoom = data.currentRoom;
-        if (typeof data.levelName === "string") levelName = data.levelName;
-        updateRoomSelect();
-        selectedBlocks = [];
-        renderBlocks();
-        showBlockProps();
-    } catch {}
+    localStorage.setItem('fbedit_level', JSON.stringify(getExportData()));
 }
 window.addEventListener('beforeunload', saveToStorage);
 autoSaveCheckbox.onchange = saveToStorage;
@@ -286,51 +281,52 @@ deleteBlockBtn.onclick = () => {
     }
 };
 copyBtn.onclick = async () => {
-    if (!selectedBlocks.length) return;
-    let blocks = selectedBlocks.map(idx => JSON.parse(JSON.stringify(rooms[currentRoom].objects[idx])));
-    clipboard = blocks;
     try {
-        await navigator.clipboard.writeText(JSON.stringify(blocks, null, 2));
+        await navigator.clipboard.writeText(JSON.stringify(getExportData(), null, 2));
     } catch {}
 };
 pasteBtn.onclick = async () => {
     try {
         const text = await navigator.clipboard.readText();
         let data = JSON.parse(text);
-        if (Array.isArray(data)) {
-            let objs = rooms[currentRoom].objects;
-            data.forEach(b => {
-                if (b && b.type && b.rect) {
-                    let newBlock = JSON.parse(JSON.stringify(b));
-                    newBlock.locked = false;
-                    objs.push(newBlock);
-                }
-            });
-            selectedBlocks = [];
-            for (let i=objs.length-data.length; i<objs.length; ++i) selectedBlocks.push(i);
-            renderBlocks();
-            showBlockProps();
-            saveToStorage();
-        } else if (data && data.rooms) {
-            rooms = data.rooms.map(r=>({
-                name: r.name || "Room",
-                objects: Array.isArray(r.objects) ? r.objects.map(o=>({
-                    type: o.type,
-                    rect: {...o.rect},
-                    locked: false
-                })) : []
-            }));
-            levelName = data.level_name || "My Level";
-            currentRoom = 0;
-            updateRoomSelect();
-            selectedBlocks = [];
-            renderBlocks();
-            showBlockProps();
-            saveToStorage();
-        }
+        setImportData(data);
+        saveToStorage();
     } catch (err) {
         alert("Clipboard does not contain valid JSON for blocks or level.");
     }
+};
+downloadBtn.onclick = () => {
+    const data = JSON.stringify(getExportData(), null, 2);
+    const blob = new Blob([data], {type: "application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (levelName || "level") + ".json";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 100);
+};
+importBtn.onclick = () => {
+    importFile.value = "";
+    importFile.click();
+};
+importFile.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        try {
+            const data = JSON.parse(ev.target.result);
+            setImportData(data);
+            saveToStorage();
+        } catch {
+            alert("File is not valid JSON for blocks or level.");
+        }
+    };
+    reader.readAsText(file);
 };
 function showShortcutMenu(idx) {
     removeShortcutMenu();
@@ -359,9 +355,8 @@ function showShortcutMenu(idx) {
             o.rect.w = h; o.rect.h = w;
             renderBlocks();
         } else if (action === "copy") {
-            clipboard = [JSON.parse(JSON.stringify(o))];
             try {
-                await navigator.clipboard.writeText(JSON.stringify(clipboard, null, 2));
+                await navigator.clipboard.writeText(JSON.stringify(getExportData(), null, 2));
             } catch {}
         } else if (action === "delete") {
             rooms[currentRoom].objects.splice(idx,1);
@@ -403,9 +398,8 @@ function showContextMenu(x, y, idx) {
             o.rect.w = h; o.rect.h = w;
             renderBlocks();
         } else if (action === "copy") {
-            clipboard = [JSON.parse(JSON.stringify(o))];
             try {
-                await navigator.clipboard.writeText(JSON.stringify(clipboard, null, 2));
+                await navigator.clipboard.writeText(JSON.stringify(getExportData(), null, 2));
             } catch {}
         } else if (action === "delete") {
             rooms[currentRoom].objects.splice(idx,1);
@@ -456,17 +450,7 @@ preview.addEventListener('mousedown', e => {
         document.body.style.userSelect = "none";
     }
 });
-window.addEventListener('mousemove', e => {
-    if (mouseDown && mouseDragStart) {
-        let rect = preview.getBoundingClientRect();
-        let x1 = mouseDragStart.x, y1 = mouseDragStart.y;
-        let x2 = e.clientX - rect.left, y2 = e.clientY - rect.top;
-        let rx = Math.min(x1,x2), ry = Math.min(y1,y2);
-        let rw = Math.abs(x2-x1), rh = Math.abs(y2-y1);
-        mouseDragRect = { x: rx, y: ry, w: rw, h: rh };
-        renderBlocks();
-        return;
-    }
+preview.addEventListener('mousemove', e => {
     if (isDragging && dragBlockIdx !== null) {
         let objs = rooms[currentRoom].objects;
         let o = objs[dragBlockIdx];
@@ -483,6 +467,18 @@ window.addEventListener('mousemove', e => {
         renderBlocks();
         showBlockProps();
         saveToStorage();
+    }
+});
+window.addEventListener('mousemove', e => {
+    if (mouseDown && mouseDragStart) {
+        let rect = preview.getBoundingClientRect();
+        let x1 = mouseDragStart.x, y1 = mouseDragStart.y;
+        let x2 = e.clientX - rect.left, y2 = e.clientY - rect.top;
+        let rx = Math.min(x1,x2), ry = Math.min(y1,y2);
+        let rw = Math.abs(x2-x1), rh = Math.abs(y2-y1);
+        mouseDragRect = { x: rx, y: ry, w: rw, h: rh };
+        renderBlocks();
+        return;
     }
     if (resizing && selectedBlocks.length === 1) {
         let idx = selectedBlocks[0];
@@ -522,11 +518,9 @@ window.addEventListener('mouseup', e => {
     document.body.style.userSelect = "";
 });
 window.addEventListener('keydown', async e => {
-    if (e.ctrlKey && e.key.toLowerCase() === 'c' && selectedBlocks.length) {
-        let blocks = selectedBlocks.map(idx => JSON.parse(JSON.stringify(rooms[currentRoom].objects[idx])));
-        clipboard = blocks;
+    if (e.ctrlKey && e.key.toLowerCase() === 'c') {
         try {
-            await navigator.clipboard.writeText(JSON.stringify(blocks, null, 2));
+            await navigator.clipboard.writeText(JSON.stringify(getExportData(), null, 2));
         } catch {}
         e.preventDefault();
     }
@@ -534,37 +528,8 @@ window.addEventListener('keydown', async e => {
         try {
             const text = await navigator.clipboard.readText();
             let data = JSON.parse(text);
-            if (Array.isArray(data)) {
-                let objs = rooms[currentRoom].objects;
-                data.forEach(b => {
-                    if (b && b.type && b.rect) {
-                        let newBlock = JSON.parse(JSON.stringify(b));
-                        newBlock.locked = false;
-                        objs.push(newBlock);
-                    }
-                });
-                selectedBlocks = [];
-                for (let i=objs.length-data.length; i<objs.length; ++i) selectedBlocks.push(i);
-                renderBlocks();
-                showBlockProps();
-                saveToStorage();
-            } else if (data && data.rooms) {
-                rooms = data.rooms.map(r=>({
-                    name: r.name || "Room",
-                    objects: Array.isArray(r.objects) ? r.objects.map(o=>({
-                        type: o.type,
-                        rect: {...o.rect},
-                        locked: false
-                    })) : []
-                }));
-                levelName = data.level_name || "My Level";
-                currentRoom = 0;
-                updateRoomSelect();
-                selectedBlocks = [];
-                renderBlocks();
-                showBlockProps();
-                saveToStorage();
-            }
+            setImportData(data);
+            saveToStorage();
         } catch (err) {
             alert("Clipboard does not contain valid JSON for blocks or level.");
         }
@@ -691,102 +656,3 @@ function randomMap() {
     saveToStorage();
 }
 randomMapBtn.onclick = randomMap;
-preview.addEventListener('mousedown', e => {
-    if (e.button !== 0) return;
-    if (e.target === preview) {
-        mouseDown = true;
-        mouseDragStart = { x: e.offsetX, y: e.offsetY };
-        mouseDragRect = { x: e.offsetX, y: e.offsetY, w: 0, h: 0 };
-        renderBlocks();
-        showBlockProps();
-        return;
-    }
-    const blockDiv = e.target.closest('.editor-block');
-    if (blockDiv && !e.target.classList.contains('resize-handle')) {
-        let idx = parseInt(blockDiv.dataset.index);
-        if (!selectedBlocks.includes(idx)) selectedBlocks = [idx];
-        dragBlockIdx = idx;
-        dragStart = { x: e.clientX, y: e.clientY };
-        isDragging = true;
-        document.body.style.userSelect = "none";
-    }
-    if (blockDiv && e.target.classList.contains('resize-handle')) {
-        let idx = parseInt(blockDiv.dataset.index);
-        if (!selectedBlocks.includes(idx)) selectedBlocks = [idx];
-        resizing = true;
-        resizeStart = {
-            x: e.clientX,
-            y: e.clientY,
-            w: rooms[currentRoom].objects[idx].rect.w,
-            h: rooms[currentRoom].objects[idx].rect.h
-        };
-        document.body.style.userSelect = "none";
-    }
-});
-preview.addEventListener('mousemove', e => {
-    if (isDragging && dragBlockIdx !== null) {
-        let objs = rooms[currentRoom].objects;
-        let o = objs[dragBlockIdx];
-        if (!o || o.locked) return;
-        let dx = e.clientX - dragStart.x;
-        let dy = e.clientY - dragStart.y;
-        let nx = o.rect.x + dx;
-        let ny = o.rect.y + dy;
-        nx = Math.max(0, Math.min(800-o.rect.w, nx));
-        ny = Math.max(0, Math.min(600-o.rect.h, ny));
-        o.rect.x = nx;
-        o.rect.y = ny;
-        dragStart = { x: e.clientX, y: e.clientY };
-        renderBlocks();
-        showBlockProps();
-        saveToStorage();
-    }
-});
-window.addEventListener('mousemove', e => {
-    if (mouseDown && mouseDragStart) {
-        let rect = preview.getBoundingClientRect();
-        let x1 = mouseDragStart.x, y1 = mouseDragStart.y;
-        let x2 = e.clientX - rect.left, y2 = e.clientY - rect.top;
-        let rx = Math.min(x1,x2), ry = Math.min(y1,y2);
-        let rw = Math.abs(x2-x1), rh = Math.abs(y2-y1);
-        mouseDragRect = { x: rx, y: ry, w: rw, h: rh };
-        renderBlocks();
-        return;
-    }
-    if (resizing && selectedBlocks.length === 1) {
-        let idx = selectedBlocks[0];
-        let o = rooms[currentRoom].objects[idx];
-        if (!o || o.locked) return;
-        let dx = e.clientX - resizeStart.x;
-        let dy = e.clientY - resizeStart.y;
-        let newW = Math.max(1, resizeStart.w + dx);
-        let newH = Math.max(1, resizeStart.h + dy);
-        newW = Math.min(newW, 800 - o.rect.x);
-        newH = Math.min(newH, 600 - o.rect.y);
-        o.rect.w = newW;
-        o.rect.h = newH;
-        renderBlocks();
-        showBlockProps();
-        saveToStorage();
-    }
-});
-window.addEventListener('mouseup', e => {
-    if (mouseDown && mouseDragRect) {
-        let objs = rooms[currentRoom].objects;
-        let rx = mouseDragRect.x, ry = mouseDragRect.y, rw = mouseDragRect.w, rh = mouseDragRect.h;
-        selectedBlocks = [];
-        objs.forEach((o,i) => {
-            let bx = o.rect.x, by = o.rect.y, bw = o.rect.w, bh = o.rect.h;
-            if (bx < rx+rw && bx+bw > rx && by < ry+rh && by+bh > ry) selectedBlocks.push(i);
-        });
-        mouseDragRect = null;
-        mouseDragStart = null;
-        mouseDown = false;
-        renderBlocks();
-        showBlockProps();
-    }
-    isDragging = false;
-    dragBlockIdx = null;
-    resizing = false;
-    document.body.style.userSelect = "";
-});
